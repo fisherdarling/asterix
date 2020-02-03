@@ -416,7 +416,7 @@ create_ast!(
         },
         BinOp: struct BinOp {
             op: enum Op {
-                Plus,
+                Plus,   
                 Minus,
                 Times,
                 Divide,
@@ -443,3 +443,4 @@ create_ast!(
         decls: Vec<Decl>,
     },
 );
+struct A;
