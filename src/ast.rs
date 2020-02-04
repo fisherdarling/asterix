@@ -160,7 +160,7 @@ macro_rules! wrapper_struct {
             $(
                 #[get]
                 #[get_mut]
-                $field: $ty,
+                pub $field: $ty,
             )*
         }
 

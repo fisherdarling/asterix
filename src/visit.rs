@@ -1,51 +1,191 @@
-// // pub struct Foo;
-// // pub struct Bar;
+pub struct Expr;
+pub struct Bar {
+    pub lhs: Expr,
+    pub rhs: Expr,
+}
 
-// // macro_rules! create_walk_impl {
-// //     // Create a walk impl for an enum.
-// //     // We take in the completed stack
-// //     // to reduce our own parsing work
-// //     (
-// //         @enum
-// //         name=[$name:ident]
-// //         raw=[$(|$raw:ident|)*]
-// //         @[$(|$a:ident, $b:tt|)*]
-// //     ) => {
+pub enum Baz {
+    A(Bar),
+    B(Expr),
+}
 
-// //     };
-// //     (   
-// //         @struct
-// //         name=[$name:ident]
-// //         @[$(|$field:ident, $ty:tt|)*]
-// //     ) => {
-// //         paste::item! {
-// //             fn [<walk_ $name>](v: &mut Visitor, casey::lower!($name): &$name) {
-                        
-// //             }
-// //         }
-// //     };
-// // }
+macro_rules! create_walker {
+    () => {};
+    (
+        {
+            @struct
+            name=[$name:ident]
+            @[$(|$field:ident, $ty:tt|)*]    
+        }
+        $($tt:tt)*
+    ) => {
+        paste::item! {
+            pub fn [<walk_ $name:lower>](v: &mut impl Visitor, [<$name:lower>]: &$name) {
+                $(
+                    paste::expr! { v.[<visit_ $ty:lower>](&[<$name:lower>].$field); }
+                )*
+            }
+        }
 
-// // create_walk_impl!(
-// //     @struct
-// //     name=[Bar]
-// //     @[]
-// // );
+        create_walker!($($tt)*);
+    };
+    (
+        {
+            @enum
+            name=[$name:ident]
+            @[$(|$variant:ident, $ty:tt|)*]    
+        }
+        $($tt:tt)*
+    ) => {
+        paste::item! {
+            pub fn [<walk_ $name:lower>](v: &mut impl Visitor, [<$name:lower>]: &$name) {
+                match [<$name:lower>] {
+                    $(
+                        $name::$variant(value) => v.[<visit_ $name:lower _ $variant:lower>](&value)
+                    ),*
+                }
+            }
 
-// macro_rules! create_visitor {
-//     (
-//         @[$(|$item:ident $(, $param:ident)*|)*]
-//     ) => {
-//         paste::item_with_macros! {
-//             pub trait Visitor {
-//                 $(
-//                     fn [<visit_ $item>](&mut self, $(casey::lower!($param): &$param),*) {
-//                         paste::expr! {
-//                             [<self . visit_ $item]
-//                         }
-//                     }
-//                 )*
-//             }
-//         }
-//     };
-// }
+            $(
+                fn [<walk_ $name:lower _ $variant:lower>](v: &mut impl Visitor, [<$variant:lower>]: &$ty) {
+                    v.[<visit_ $ty:lower>]([<$variant:lower>]);
+                }
+            )*
+        }
+
+        create_walker!($($tt)*);
+    };
+}
+
+macro_rules! create_visitor {
+    () => {};
+    (   
+        types=[
+            $($tt:tt)+
+        ]
+    ) => {
+        pub trait Visitor {
+            create_visitor!(
+                $($tt)+
+            );
+        }
+    };
+    (
+        {
+            @struct
+            name=[$name:ident]
+            @[$(|$field:ident, $ty:tt|)*]
+        }
+        $($tt:tt)*
+    ) => {
+        paste::item! {
+            fn [<visit_ $name:lower>](&mut self, [<$name:lower>]: &$name) where Self: Sized {
+                $(
+                    paste::expr! { [<walk_ $ty:lower>](self, &[<$name:lower>].$field); }
+                )*
+            }
+        }
+
+        create_visitor!($($tt)*);
+    };
+    (
+        {
+            @enum
+            name=[$name:ident]
+            @[$(|$variant:ident, $ty:tt|)*]
+        }
+        $($tt:tt)*
+    ) => {
+        paste::item! {
+            fn [<visit_ $name:lower>](&mut self, [<$name:lower>]: &$name) where Self: Sized {
+                match [<$name:lower>] {
+                    $(
+                        $name::$variant(v) => [<walk_ $name:lower _ $variant:lower>](self, &v)
+                    ),*
+                }
+            }
+
+            $(
+                fn [<visit_ $name:lower _ $variant:lower>](&mut self, [<$variant:lower>]: &$ty) where Self: Sized {
+                    [<walk_ $ty:lower>](self, [<$variant:lower>]);
+                }
+            )*
+        }
+
+        create_visitor!($($tt)*);
+    };
+}
+
+
+// create_walker!(
+//     name=[Expr]
+//     @[]
+// );
+
+
+create_visitor!(
+    types=[
+        {   
+            @struct
+            name=[Bar]
+            @[
+                |lhs, Expr|
+                |rhs, Expr|
+            ]
+        }
+        {
+            @enum
+            name=[Baz]
+            @[
+                |A, Bar|
+                |B, Expr|
+            ]
+        }
+        {
+            @struct
+            name=[Expr]
+            @[]
+        }
+    ]
+);
+
+create_walker!(
+    {
+        @struct
+        name=[Expr]
+        @[]
+    }
+    {   
+        @struct
+        name=[Bar]
+        @[
+            |lhs, Expr|
+            |rhs, Expr|
+        ]
+    }
+    {
+        @enum
+        name=[Baz]
+        @[
+            |A, Bar|
+            |B, Expr|
+        ]
+    }
+);
+
+// create_visitor!(
+//     name=[Expr]
+//     @[|Expr, Expr|]
+// );
+
+
+
+// create_visitor!(
+//     name=[Bar]
+//     @[
+//         |lhs, Expr|
+//         |rhs, Expr|    
+//     ]
+// );
+
+

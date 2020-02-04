@@ -8,5 +8,5 @@ edition = "2018"
 # generational-arena = "*"
 derive_more = "*"
 getset = "*"
-paste = { path = "../paste" }
+paste = { path = "../../Opensource/paste" }
 casey = "*"
