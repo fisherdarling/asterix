@@ -3,5 +3,7 @@
 #![feature(concat_idents)]
 #![allow(unused)]
 
+#[macro_use]
 pub mod ast;
+
 pub mod visit;

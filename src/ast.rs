@@ -17,6 +17,8 @@
 /// 
 struct Docs;
 
+use crate::create_visitor;
+
 
 macro_rules! wrapper_struct {
     // Main entry
@@ -185,13 +187,18 @@ macro_rules! wrapper_struct {
 }
 
 macro_rules! wrapper_enum {
+    () => {};
     // Entry
     (
+        $(@inner)?
+        $(@spray)?
         enum $name:ident {
             $($tt:tt)*
         }
     ) => {
         wrapper_enum!(
+            @inner
+            types=[]
             name=[$name]
             raw=[]
             @[]
@@ -202,6 +209,9 @@ macro_rules! wrapper_enum {
     //
     // Foo,
     (
+        $(@inner)?
+        $(@spray)?
+        types=[$($types:tt)*]
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
         @[$(|$a:ident, $b:tt|)*]
@@ -221,6 +231,9 @@ macro_rules! wrapper_enum {
     // Name-is-Type variant:
     // |Foo|,
     (
+        $(@inner)?
+        $(@spray)?
+        types=[$($types:tt)*]
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
         @[$(|$a:ident, $b:tt|)*]
@@ -228,6 +241,7 @@ macro_rules! wrapper_enum {
         $($tt:tt)*
     ) => {
         wrapper_enum!(
+            types=[$($types)*]
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -240,6 +254,9 @@ macro_rules! wrapper_enum {
     // Variant with type:
     // Foo(isize),
     (
+        $(@inner)?
+        $(@spray)?
+        types=[$($types:tt)*]
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
         @[$(|$a:ident, $b:tt|)*]
@@ -247,6 +264,7 @@ macro_rules! wrapper_enum {
         $($tt:tt)*
     ) => {
         wrapper_enum!(
+            types=[$($types)*]
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -259,6 +277,9 @@ macro_rules! wrapper_enum {
     // Variant is new enum:
     // Foo: enum Bar { ... }
     (
+        $(@inner)?
+        $(@spray)?
+        types=[$($types:tt)*]
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
         @[$(|$a:ident, $b:tt|)*]
@@ -274,6 +295,7 @@ macro_rules! wrapper_enum {
         );
 
         wrapper_enum!(
+            types=[$($types)*]
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -286,6 +308,9 @@ macro_rules! wrapper_enum {
     // Variant is new tuple struct:
     // Foo |isize|,
     (
+        $(@inner)?
+        $(@spray)?
+        types=[$($types:tt)*]
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
         @[$(|$a:ident, $b:tt|)*]
@@ -295,6 +320,7 @@ macro_rules! wrapper_enum {
         wrapper_struct!($var |$ty|);
 
         wrapper_enum!(
+            types=[$($types)*]
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -307,10 +333,13 @@ macro_rules! wrapper_enum {
     // Variant is new struct struct:
     // Foo: struct Bar { ... }
     (
+        $(@inner)?
+        $(@spray)?
+        types=[$($types:tt)*]
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
         @[$(|$a:ident, $b:tt|)*]
-        $var:ident: struct $iname:ident {
+        $var:ident : struct $iname:ident {
             $($fields:tt)*
         },
         $($tt:tt)*
@@ -322,6 +351,7 @@ macro_rules! wrapper_enum {
         );
 
         wrapper_enum!(
+            types=[$($types)*]
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -332,8 +362,31 @@ macro_rules! wrapper_enum {
         );
     };
     // Base case: stack is full, nothing
-    // left to munch.
+    // left to munch. Not marked as inner,
+    // so we do visitor generation here:
     (
+        types=[$($types:tt)*]
+        name=[$name:ident]
+        raw=[$(|$raw:ident|)*]
+        @[$(|$a:ident, $b:tt|)*]
+    ) => {
+        #[derive(Debug, Clone, derive_more::From)]
+        pub enum $name {
+            $(
+                $a($b),
+            )*
+            $(
+                $raw
+            ),*
+        }
+
+        create_visitor!($($types)*);
+    };
+    // No visitor should be generated,
+    // marked as @inner 
+    (
+        @inner
+        types=[$($types:tt)*]
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
         @[$(|$a:ident, $b:tt|)*]
@@ -348,6 +401,23 @@ macro_rules! wrapper_enum {
             ),*
         }
     };
+    (
+        @spray
+        types=[$($types:tt)*]
+        name=[$name:ident]
+        raw=[$(|$raw:ident|)*]
+        @[$(|$a:ident, $b:tt|)*]
+    ) => {
+        #[derive(Debug, Clone, derive_more::From)]
+        pub enum $name {
+            $(
+                $a($b),
+            )*
+            $(
+                $raw
+            ),*
+        }
+    };  
 }
 
 /// This generates a simple AST:
@@ -393,6 +463,7 @@ macro_rules! create_ast {
     ) => {
         pub mod ast {
             wrapper_enum!(
+                types=[]
                 name=[Ast]
                 raw=[]
                 @[]
@@ -401,6 +472,16 @@ macro_rules! create_ast {
         }
     };
 }
+
+trace_macros!(true);
+
+create_ast!(
+    Lit: enum Lit {
+        A(isize),
+        B(f64),
+        C(String),
+    },
+);
 
 create_ast!(
     Lit: enum Lit {

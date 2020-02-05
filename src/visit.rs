@@ -1,15 +1,6 @@
-pub struct Expr;
-pub struct Bar {
-    pub lhs: Expr,
-    pub rhs: Expr,
-}
+#![macro_use]
 
-pub enum Baz {
-    A(Bar),
-    B(Expr),
-    C,
-}
-
+#[macro_export]
 macro_rules! create_walker {
     () => {};
     (
@@ -68,6 +59,7 @@ macro_rules! create_walker {
     };
 }
 
+#[macro_export]
 macro_rules! create_visitor {
     () => {};
     (   
@@ -75,6 +67,10 @@ macro_rules! create_visitor {
             $($tt:tt)+
         ]
     ) => {
+        create_walker!(
+            $($tt)*
+        );
+
         pub trait Visitor {
             create_visitor!(
                 $($tt)+
@@ -134,54 +130,54 @@ macro_rules! create_visitor {
     };
 }
 
-create_visitor!(
-    types=[
-        {   
-            @struct
-            name=[Bar]
-            @[
-                |lhs, Expr|
-                |rhs, Expr|
-            ]
-        }
-        {
-            @enum
-            name=[Baz]
-            raw=[C]
-            @[
-                |A, Bar|
-                |B, Expr|
-            ]
-        }
-        {
-            @struct
-            name=[Expr]
-            @[]
-        }
-    ]
-);
+// create_visitor!(
+//     types=[
+//         {   
+//             @struct
+//             name=[Bar]
+//             @[
+//                 |lhs, Expr|
+//                 |rhs, Expr|
+//             ]
+//         }
+//         {
+//             @enum
+//             name=[Baz]
+//             raw=[C]
+//             @[
+//                 |A, Bar|
+//                 |B, Expr|
+//             ]
+//         }
+//         {
+//             @struct
+//             name=[Expr]
+//             @[]
+//         }
+//     ]
+// );
 
-create_walker!(
-    {
-        @struct
-        name=[Expr]
-        @[]
-    }
-    {   
-        @struct
-        name=[Bar]
-        @[
-            |lhs, Expr|
-            |rhs, Expr|
-        ]
-    }
-    {
-        @enum
-        name=[Baz]
-        raw=[C]
-        @[
-            |A, Bar|
-            |B, Expr|
-        ]
-    }
-);
+// create_walker!(
+//     {
+//         @struct
+//         name=[Expr]
+//         @[]
+//     }
+//     {   
+//         @struct
+//         name=[Bar]
+//         @[
+//             |lhs, Expr|
+//             |rhs, Expr|
+//         ]
+//     }
+//     {
+//         @enum
+//         name=[Baz]
+//         raw=[C]
+//         @[
+//             |A, Bar|
+//             |B, Expr|
+//         ]
+//     }
+// );
