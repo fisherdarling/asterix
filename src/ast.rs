@@ -350,22 +350,6 @@ macro_rules! wrapper_enum {
     };
 }
 
-#[macro_export]
-macro_rules! create_ast {
-    (
-        $($variants:tt)+
-    ) => {
-        pub mod ast {
-            wrapper_enum!(
-                name=[Ast]
-                raw=[]
-                @[]
-                $($variants)*
-            );
-        }
-    };
-}
-
 /// This generates a simple AST:
 /// 
 /// There is some new syntax to facilitate construction
@@ -402,6 +386,22 @@ macro_rules! create_ast {
 /// is a completely new type in the scope of the macro.
 /// Watch out for name collisions. This also means you can 
 /// create the type once, and use it later without redefining it.
+#[macro_export]
+macro_rules! create_ast {
+    (
+        $($variants:tt)+
+    ) => {
+        pub mod ast {
+            wrapper_enum!(
+                name=[Ast]
+                raw=[]
+                @[]
+                $($variants)*
+            );
+        }
+    };
+}
+
 create_ast!(
     Lit: enum Lit {
         Int(isize),
@@ -443,4 +443,3 @@ create_ast!(
         decls: Vec<Decl>,
     },
 );
-struct A;

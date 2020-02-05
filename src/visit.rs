@@ -7,6 +7,7 @@ pub struct Bar {
 pub enum Baz {
     A(Bar),
     B(Expr),
+    C,
 }
 
 macro_rules! create_walker {
@@ -33,6 +34,7 @@ macro_rules! create_walker {
         {
             @enum
             name=[$name:ident]
+            raw=[$($raw:ident)*]
             @[$(|$variant:ident, $ty:tt|)*]    
         }
         $($tt:tt)*
@@ -41,7 +43,10 @@ macro_rules! create_walker {
             pub fn [<walk_ $name:lower>](v: &mut impl Visitor, [<$name:lower>]: &$name) {
                 match [<$name:lower>] {
                     $(
-                        $name::$variant(value) => v.[<visit_ $name:lower _ $variant:lower>](&value)
+                        $name::$variant(value) => v.[<visit_ $name:lower _ $variant:lower>](&value),
+                    )*
+                    $(
+                        $name::$raw => v.[<visit_ $name:lower _ $raw:lower>]()
                     ),*
                 }
             }
@@ -49,6 +54,12 @@ macro_rules! create_walker {
             $(
                 fn [<walk_ $name:lower _ $variant:lower>](v: &mut impl Visitor, [<$variant:lower>]: &$ty) {
                     v.[<visit_ $ty:lower>]([<$variant:lower>]);
+                }
+            )*
+
+            $(
+                fn [<walk_ $name:lower _ $raw:lower>](v: &mut impl Visitor) {
+                    v.[<visit_ $name:lower _ $raw:lower>]();
                 }
             )*
         }
@@ -92,6 +103,7 @@ macro_rules! create_visitor {
         {
             @enum
             name=[$name:ident]
+            raw=[$($raw:ident)*]
             @[$(|$variant:ident, $ty:tt|)*]
         }
         $($tt:tt)*
@@ -100,7 +112,10 @@ macro_rules! create_visitor {
             fn [<visit_ $name:lower>](&mut self, [<$name:lower>]: &$name) where Self: Sized {
                 match [<$name:lower>] {
                     $(
-                        $name::$variant(v) => [<walk_ $name:lower _ $variant:lower>](self, &v)
+                        $name::$variant(v) => [<walk_ $name:lower _ $variant:lower>](self, &v),
+                    )*
+                    $(
+                        $name::$raw => [<walk_ $name:lower _ $raw:lower>](self),
                     ),*
                 }
             }
@@ -110,18 +125,14 @@ macro_rules! create_visitor {
                     [<walk_ $ty:lower>](self, [<$variant:lower>]);
                 }
             )*
+            $(
+                fn [<visit_ $name:lower _ $raw:lower>](&mut self) {}
+            )*
         }
 
         create_visitor!($($tt)*);
     };
 }
-
-
-// create_walker!(
-//     name=[Expr]
-//     @[]
-// );
-
 
 create_visitor!(
     types=[
@@ -136,6 +147,7 @@ create_visitor!(
         {
             @enum
             name=[Baz]
+            raw=[C]
             @[
                 |A, Bar|
                 |B, Expr|
@@ -166,26 +178,10 @@ create_walker!(
     {
         @enum
         name=[Baz]
+        raw=[C]
         @[
             |A, Bar|
             |B, Expr|
         ]
     }
 );
-
-// create_visitor!(
-//     name=[Expr]
-//     @[|Expr, Expr|]
-// );
-
-
-
-// create_visitor!(
-//     name=[Bar]
-//     @[
-//         |lhs, Expr|
-//         |rhs, Expr|    
-//     ]
-// );
-
-
