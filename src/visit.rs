@@ -1,5 +1,6 @@
-#![macro_use]
+// #![macro_use]
 
+#[macro_use]
 #[macro_export]
 macro_rules! create_walker {
     () => {};
@@ -59,6 +60,7 @@ macro_rules! create_walker {
     };
 }
 
+#[macro_use]
 #[macro_export]
 macro_rules! create_visitor {
     () => {};
