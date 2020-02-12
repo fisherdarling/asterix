@@ -1,80 +1,25 @@
 // #![macro_use]
 
-#[macro_use]
-#[macro_export]
-macro_rules! create_walker {
-    () => {};
-    (
-        {
-            @struct
-            name=[$name:ident]
-            @[$(|$field:ident, $ty:tt|)*]    
-        }
-        $($tt:tt)*
-    ) => {
-        paste::item! {
-            pub fn [<walk_ $name:lower>](v: &mut impl Visitor, [<$name:lower>]: &$name) {
-                $(
-                    paste::expr! { v.[<visit_ $ty:lower>](&[<$name:lower>].$field); }
-                )*
-            }
-        }
-
-        create_walker!($($tt)*);
-    };
-    (
-        {
-            @enum
-            name=[$name:ident]
-            raw=[$($raw:ident)*]
-            @[$(|$variant:ident, $ty:tt|)*]    
-        }
-        $($tt:tt)*
-    ) => {
-        paste::item! {
-            pub fn [<walk_ $name:lower>](v: &mut impl Visitor, [<$name:lower>]: &$name) {
-                match [<$name:lower>] {
-                    $(
-                        $name::$variant(value) => v.[<visit_ $name:lower _ $variant:lower>](&value),
-                    )*
-                    $(
-                        $name::$raw => v.[<visit_ $name:lower _ $raw:lower>]()
-                    ),*
-                }
-            }
-
-            $(
-                fn [<walk_ $name:lower _ $variant:lower>](v: &mut impl Visitor, [<$variant:lower>]: &$ty) {
-                    v.[<visit_ $ty:lower>]([<$variant:lower>]);
-                }
-            )*
-
-            $(
-                fn [<walk_ $name:lower _ $raw:lower>](v: &mut impl Visitor) {
-                    v.[<visit_ $name:lower _ $raw:lower>]();
-                }
-            )*
-        }
-
-        create_walker!($($tt)*);
-    };
-}
-
-#[macro_use]
+// #[macro_use]
 #[macro_export]
 macro_rules! create_visitor {
-    () => {};
-    (   
+    (
+        enum $name:ident {
+            $($tt:tt)*
+        }
+    ) => {
+    };
+    (
         types=[
             $($tt:tt)+
         ]
     ) => {
-        create_walker!(
-            $($tt)*
-        );
+        // crate::create_walker!(
+        //     $($tt)*
+        // );
 
         pub trait Visitor {
-            create_visitor!(
+            crate::create_visitor!(
                 $($tt)+
             );
         }
@@ -95,7 +40,7 @@ macro_rules! create_visitor {
             }
         }
 
-        create_visitor!($($tt)*);
+        crate::create_visitor!($($tt)*);
     };
     (
         {
@@ -128,13 +73,13 @@ macro_rules! create_visitor {
             )*
         }
 
-        create_visitor!($($tt)*);
+        crate::create_visitor!($($tt)*);
     };
 }
 
 // create_visitor!(
 //     types=[
-//         {   
+//         {
 //             @struct
 //             name=[Bar]
 //             @[
@@ -165,7 +110,7 @@ macro_rules! create_visitor {
 //         name=[Expr]
 //         @[]
 //     }
-//     {   
+//     {
 //         @struct
 //         name=[Bar]
 //         @[

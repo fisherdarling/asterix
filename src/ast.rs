@@ -1,22 +1,22 @@
-/// ast!(
-///     Float: |f32|,
-///     Integer: i32,
-///     BinOp: struct {
-///         op: Op,
-///         lhs: Expr,
-///         rhs: Expr,
-///     },
-///     Expr: enum {
-///         BinOp,
-///         B: |i32|,
-///         C: struct {
-///             inner: usize,
-///         }
-///     },
-/// );
-/// 
-struct Docs;
+//! ast!(
+//!     Float: |f32|,
+//!     Integer: i32,
+//!     BinOp: struct {
+//!         op: Op,
+//!         lhs: Expr,
+//!         rhs: Expr,
+//!     },
+//!     Expr: enum {
+//!         BinOp,
+//!         B: |i32|,
+//!         C: struct {
+//!             inner: usize,
+//!         }
+//!     },
+//! );
+//!
 
+#[macro_export]
 macro_rules! wrapper_struct {
     // Main entry
     (
@@ -24,7 +24,7 @@ macro_rules! wrapper_struct {
             $($tt:tt)*
         }
     ) => {
-        wrapper_struct!(
+        crate::wrapper_struct!(
             name=[$name]
             @[]
             $($tt)*
@@ -38,7 +38,7 @@ macro_rules! wrapper_struct {
         $lhs:ident : $ty:ty,
         $($tt:tt)*
     ) => {
-        wrapper_struct!(
+        crate::wrapper_struct!(
             name=[$name]
             @[
                 |$lhs, $ty|
@@ -55,9 +55,9 @@ macro_rules! wrapper_struct {
         $lhs:ident : $iname:ident |$ty:ty|,
         $($tt:tt)*
     ) => {
-        wrapper_struct!($iname |$ty|);
+        crate::wrapper_struct!($iname |$ty|);
 
-        wrapper_struct!(
+        crate::wrapper_struct!(
             name=[$name]
             @[
                 |$lhs, $iname|
@@ -68,12 +68,11 @@ macro_rules! wrapper_struct {
     };
     // Struct syntax as a field. Generate
     // the struct and push the ident to the stack.
-    //    
+    //
     // lhs: struct Name {
     //     $($inner:tt)*
     // }
     (
-        $(@spray)?
         name=[$name:ident]
         @[$(|$a:ident, $b:tt|)*]
         $lhs:ident : struct $iname:ident {
@@ -81,13 +80,13 @@ macro_rules! wrapper_struct {
         },
         $($tt:tt)*
     ) => {
-        wrapper_struct!(
+        crate::wrapper_struct!(
             struct $iname {
                 $($inner)*
             }
         );
 
-        wrapper_struct!(
+        crate::wrapper_struct!(
             name=[$name]
             @[
                 |$lhs, $iname|
@@ -106,13 +105,13 @@ macro_rules! wrapper_struct {
         },
         $($tt:tt)*
     ) => {
-        wrapper_enum!(
+        crate::wrapper_enum!(
             enum $iname {
                 $($inner)*
             }
         );
 
-        wrapper_struct!(
+        crate::wrapper_struct!(
             name=[$name]
             @[
                 |$lhs, $iname|
@@ -148,15 +147,15 @@ macro_rules! wrapper_struct {
             }
         }
     };
-    (
-        $name:ident |$ty:ty|
-    ) => {
-        {
-            @struct
-            name=[$name]
-            @[|0, $ty|]
-        }
-    };
+    // (
+    //     $name:ident |$ty:ty|
+    // ) => {
+    //     {
+    //         @struct
+    //         name=[$name]
+    //         @[|0, $ty|]
+    //     }
+    // };
     // Field struct base case:
     // At this point the stack is full,
     // And there are no more tokens.
@@ -183,6 +182,7 @@ macro_rules! wrapper_struct {
     };
 }
 
+#[macro_export]
 macro_rules! wrapper_enum {
     () => {};
     // Entry
@@ -191,7 +191,7 @@ macro_rules! wrapper_enum {
             $($tt:tt)*
         }
     ) => {
-        wrapper_enum!(
+        crate::wrapper_enum!(
             name=[$name]
             raw=[]
             @[]
@@ -208,7 +208,7 @@ macro_rules! wrapper_enum {
         $var:ident,
         $($tt:tt)*
     ) => {
-        wrapper_enum!(
+        crate::wrapper_enum!(
             name=[$name]
             raw=[
                 |$var|
@@ -227,7 +227,7 @@ macro_rules! wrapper_enum {
         |$var:ident|,
         $($tt:tt)*
     ) => {
-        wrapper_enum!(
+        crate::wrapper_enum!(
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -246,7 +246,7 @@ macro_rules! wrapper_enum {
         $var:ident($ty:ty),
         $($tt:tt)*
     ) => {
-        wrapper_enum!(
+        crate::wrapper_enum!(
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -267,13 +267,13 @@ macro_rules! wrapper_enum {
         },
         $($tt:tt)*
     ) => {
-        wrapper_enum!(
+        crate::wrapper_enum!(
             enum $iname {
                 $($variants)*
             }
         );
 
-        wrapper_enum!(
+        crate::wrapper_enum!(
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -292,9 +292,9 @@ macro_rules! wrapper_enum {
         $var:ident |$ty:ty|,
         $($tt:tt)*
     ) => {
-        wrapper_struct!($var |$ty|);
+        crate::wrapper_struct!($var |$ty|);
 
-        wrapper_enum!(
+        crate::wrapper_enum!(
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -315,13 +315,13 @@ macro_rules! wrapper_enum {
         },
         $($tt:tt)*
     ) => {
-        wrapper_struct!(
+        crate::wrapper_struct!(
             struct $iname {
                 $($fields)*
             }
         );
 
-        wrapper_enum!(
+        crate::wrapper_enum!(
             name=[$name]
             raw=[$(|$raw|)*]
             @[
@@ -350,7 +350,7 @@ macro_rules! wrapper_enum {
         }
     };
     // No visitor should be generated,
-    // marked as @inner 
+    // marked as @inner
     (
         name=[$name:ident]
         raw=[$(|$raw:ident|)*]
@@ -369,40 +369,40 @@ macro_rules! wrapper_enum {
 }
 
 /// This generates a simple AST:
-/// 
+///
 /// There is some new syntax to facilitate construction
 /// of new types. The macro creates an `ast` module, and places all
 /// of the types in it.
-/// 
+///
 /// To create a tuple struct of one element:
 /// Foo |$type| => pub struct Foo(pub $type);
-/// 
+///
 /// To create a struct of multiple elements,
 /// and assign it to a field:
 /// field: struct Baz { ... }
-/// 
+///
 /// Creating an enum is always:
 /// enum A { ... }
-/// 
+///
 /// You can place that anywhere you can assign
 /// a type to an identifier:
-/// 
+///
 /// // As a variant:
 /// A: enum Fuzz { ... }
-/// 
+///
 /// // As a field:
 /// field: enum Farx { ... }
-/// 
+///
 /// To create a variant of a type, where the type name is the
 /// same as the variant name:
 /// |Lit| => Lit(Lit)
-/// 
+///
 /// A variant which is just a label is:
 /// Unit => Unit
-/// 
+///
 /// Every Identifier following an `enum` or `struct`
 /// is a completely new type in the scope of the macro.
-/// Watch out for name collisions. This also means you can 
+/// Watch out for name collisions. This also means you can
 /// create the type once, and use it later without redefining it.
 #[macro_export]
 macro_rules! create_ast {
@@ -410,12 +410,25 @@ macro_rules! create_ast {
         $($variants:tt)+
     ) => {
         pub mod ast {
-            wrapper_enum!(
+            crate::wrapper_enum!(
                 name=[Ast]
                 raw=[]
                 @[]
                 $($variants)*
             );
+
+            // crate::create_walker!(
+            //     enum Ast {
+            //         $($variants)*
+            //     }
+            // );
+
+            crate::create_visitor!(
+                enum Ast {
+                    $($variants)*
+                }
+            );
+
         }
     };
 }
@@ -430,44 +443,44 @@ macro_rules! create_ast {
 //     },
 // );
 
-create_ast!(
-    Lit: enum Lit {
-        Int(isize),
-        Float(f32),
-        Ident |String|,
-        Str |String|,
-    },
-    Expr: enum Expr {
-        Call: struct Call {
-            lhs: Ident,
-            rhs: Box<Expr>,
-        },
-        BinOp: struct BinOp {
-            op: enum Op {
-                Plus,   
-                Minus,
-                Times,
-                Divide,
-            },
-            lhs: Box<Expr>,
-            rhs: Box<Expr>,
-        },
-        |Lit|,
-        Unit,
-    },
-    Stmt: enum Stmt {
-        |Expr|,
-        Assignment: struct Assignment {
-            lhs: Ident,
-            rhs: Option<Expr>,
-        },
-        Print(Option<Expr>),
-        Return |Option<Expr>|, // TODO: Fix From impl
-    },
-    Decl: enum Decl {
-        |Stmt|,
-    },
-    Program: struct Program {
-        decls: Vec<Decl>,
-    },
-);
+// create_ast!(
+//     Lit: enum Lit {
+//         Int(isize),
+//         Float(f32),
+//         Ident |String|,
+//         Str |String|,
+//     },
+//     Expr: enum Expr {
+//         Call: struct Call {
+//             lhs: Ident,
+//             rhs: Box<Expr>,
+//         },
+//         BinOp: struct BinOp {
+//             op: enum Op {
+//                 Plus,
+//                 Minus,
+//                 Times,
+//                 Divide,
+//             },
+//             lhs: Box<Expr>,
+//             rhs: Box<Expr>,
+//         },
+//         |Lit|,
+//         Unit,
+//     },
+//     Stmt: enum Stmt {
+//         |Expr|,
+//         Assignment: struct Assignment {
+//             lhs: Ident,
+//             rhs: Option<Expr>,
+//         },
+//         Print(Option<Expr>),
+//         Ret |Option<Expr>|, // TODO: Fix From impl
+//     },
+//     Decl: enum Decl {
+//         |Stmt|,
+//     },
+//     Program: struct Program {
+//         decls: Vec<Decl>,
+//     },
+// );
