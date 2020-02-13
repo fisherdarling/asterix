@@ -77,6 +77,8 @@ ast!(
             op: enum Op {
                 Plus,
                 Minus,
+                Times,
+                Divide,
             },
             lhs: Box<Expr>,
             rhs: Box<Expr>,
@@ -99,11 +101,13 @@ impl<'ast> Visitor<'ast> for Interpreter {
         match b.op() {
             Op::Plus => lhs + rhs,
             Op::Minus => lhs - rhs,
+            Op::Times => lhs * rhs,
+            Op::Divide => lhs / rhs,
         }
     }
 
-    fn visit_lit(&mut self, l: &Lit) -> isize {
-        *l.inner()
+    fn visit_lit(&mut self, lit: &Lit) -> isize {
+        *lit.inner()
     }
 }
 
@@ -113,17 +117,17 @@ mod tests {
 
     #[test]
     fn simple_expr() {
-        let one = Box::new(Expr::lit(Lit::new(1)));
+        let one = Box::new(Expr::lit(1));
         let one_p_one = BinOp::new(Op::Plus, one.clone(), one.clone());
 
-        let two = Box::new(Expr::lit(Lit::new(2)));
+        let two = Box::new(Expr::lit(2));
         let minus_two = BinOp::new(Op::Minus, Box::new(Expr::binop(one_p_one.clone())), two);
 
         let mut interpreter = Interpreter;
 
-        let result = interpreter.visit_ast(&Ast::expr(Expr::binop(one_p_one)));
+        let result = interpreter.visit_ast(&Ast::expr(one_p_one));
         println!("1 + 1:       {}", result);
-        let result = interpreter.visit_ast(&Ast::expr(Expr::binop(minus_two)));
+        let result = interpreter.visit_ast(&Ast::expr(minus_two));
         println!("(1 + 1) - 2: {}", result);
     }
 }

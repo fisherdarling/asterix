@@ -351,8 +351,8 @@ impl ToTokens for EnumType {
 
             impl #name {
                 #(
-                    pub fn #typed_names_lower(e: #types) -> Self {
-                        #name::#typed_names(e)
+                    pub fn #typed_names_lower<T: Into<#types>>(e: T) -> Self {
+                        #name::#typed_names(e.into())
                     }
                 )*
 
@@ -362,6 +362,14 @@ impl ToTokens for EnumType {
                     }
                 )*
             }
+
+            #(
+                impl From<#types> for #name {
+                    fn from(v: #types) -> Self {
+                        Self::#typed_names(v)
+                    }
+                }
+            )*
         })
     }
 }
