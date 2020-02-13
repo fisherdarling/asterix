@@ -16,7 +16,7 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn create_ast(self) -> proc_macro2::TokenStream {
+    pub fn create_ast(self, visitor: Option<TokenStream>) -> proc_macro2::TokenStream {
         let ast_name = Ident::new("Ast", Span::call_site());
         let new_types = self.new_types;
         let ast = EnumType {
@@ -28,6 +28,7 @@ impl Context {
             pub mod ast {
                 #(#new_types)*
                 #ast
+                #visitor
             }
         }
     }
@@ -350,13 +351,13 @@ impl ToTokens for EnumType {
 
             impl #name {
                 #(
-                    fn #typed_names_lower(e: #types) -> Self {
+                    pub fn #typed_names_lower(e: #types) -> Self {
                         #name::#typed_names(e)
                     }
                 )*
 
                 #(
-                    fn #raw_names_lower() -> Self {
+                    pub fn #raw_names_lower() -> Self {
                         #name::#raw_names
                     }
                 )*

@@ -11,7 +11,7 @@ use syn::{
     Error, Ident, Result, Token, Type,
 };
 
-use crate::context::{Context, NewType};
+use crate::context::{Context, NewType, EnumType};
 
 pub struct Visitor<'c> {
     pub new_idents: HashSet<String>,
@@ -38,7 +38,9 @@ impl<'c> Visitor<'c> {
         let func_impl = self.func_impl();
 
         tokens.append_all(quote! {
-            pub trait Visitor<'ast> {
+            pub trait Visitor<'ast> where Self::Output: Default {
+                type Output;
+
                 #func_impl
             }
         });
@@ -49,12 +51,18 @@ impl<'c> Visitor<'c> {
     pub fn func_impl(&self) -> TokenStream {
         let mut tokens = TokenStream::default();
 
+        let ast_type = NewType::Enum(EnumType {
+            name: Ident::new("Ast", Span::call_site()),
+            variants: self.context.variants.clone(),
+        });
+
         let functions: Vec<TokenStream> = self
             .context
             .new_types
             .iter()
             .map(|nt| self.single_func(nt))
             .collect();
+        tokens.append_all(self.single_func(&ast_type));
         tokens.extend(functions);
 
         tokens
@@ -128,7 +136,7 @@ impl<'c> Visitor<'c> {
                 let raw_visit_func = raw_visit.clone();
 
                 tokens.append_all(quote! {
-                    fn #visit_name(&mut self, #name_lower: &'ast #name) where Self: Sized {
+                    fn #visit_name(&mut self, #name_lower: &'ast #name) -> Self::Output where Self: Sized  {
                         match #name_lower {
                             #(
                                 #name::#new_type_idents(v) => self.#new_type_visit(&v),
@@ -143,11 +151,15 @@ impl<'c> Visitor<'c> {
                     }
 
                     #(
-                        fn #basic_visit_func(&mut self, v: &'ast #basic_types_func) where Self: Sized {}
+                        fn #basic_visit_func(&mut self, v: &'ast #basic_types_func) -> Self::Output where Self: Sized  {
+                            Self::Output::default()
+                        }
                     )*
 
                     #(
-                        fn #raw_visit_func(&mut self) where Self: Sized {}
+                        fn #raw_visit_func(&mut self) -> Self::Output where Self: Sized  {
+                            Self::Output::default()
+                        }
                     )*
                 });
             }
@@ -176,10 +188,11 @@ impl<'c> Visitor<'c> {
                 let name_lower_repeat = (0..new_type_field_names.len()).map(|_| &name_lower);
 
                 tokens.append_all(quote! {
-                    fn #visit_name(&mut self, #name_lower: &'ast #name) where Self: Sized {
+                    fn #visit_name(&mut self, #name_lower: &'ast #name) -> Self::Output where Self: Sized  {
                         #(
                             self.#new_type_visit(&#name_lower_repeat.#new_type_field_names);
                         )*
+                        Self::Output::default()
                     }
                 });
             }
@@ -202,13 +215,13 @@ impl<'c> Visitor<'c> {
                 let name_lower_inner = name_lower.clone();
                 let inner_call = if self.new_idents.contains(&type_string) {
                     let visit_new_type = format_ident!("visit_{}", type_string.to_lowercase(), span=s.ty.span());
-                    Some(quote! { self.#visit_new_type(#name_lower_inner.inner()) })
+                    quote! { self.#visit_new_type(#name_lower_inner.inner()) }
                 } else {
-                    None
+                    quote! { Self::Output::default() }
                 };
 
                 tokens.append_all(quote! {
-                    fn #visit_name(&mut self, #name_lower: &#name) where Self: Sized {
+                    fn #visit_name(&mut self, #name_lower: &#name) -> Self::Output where Self: Sized  {
                         #inner_call
                     }
                 });

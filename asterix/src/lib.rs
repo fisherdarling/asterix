@@ -65,3 +65,65 @@ pub use asterix_impl::ast;
 //         decls: Vec<Decl>,
 //     },
 // );
+
+// ast!(
+//     Lit |isize|
+// );
+
+ast!(
+    Lit |isize|,
+    Expr: enum Expr {
+        BinOp: struct BinOp {
+            op: enum Op {
+                Plus,
+                Minus,
+            },
+            lhs: Box<Expr>,
+            rhs: Box<Expr>,
+        },
+        |Lit|
+    }
+);
+
+use ast::*;
+
+pub struct Interpreter;
+
+impl<'ast> Visitor<'ast> for Interpreter {
+    type Output = isize;
+
+    fn visit_binop(&mut self, b: &BinOp) -> isize {
+        let lhs = self.visit_expr(b.lhs());
+        let rhs = self.visit_expr(b.rhs());
+
+        match b.op() {
+            Op::Plus => lhs + rhs,
+            Op::Minus => lhs - rhs,
+        }
+    }
+
+    fn visit_lit(&mut self, l: &Lit) -> isize {
+        *l.inner()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple_expr() {
+        let one = Box::new(Expr::lit(Lit::new(1)));
+        let one_p_one = BinOp::new(Op::Plus, one.clone(), one.clone());
+
+        let two = Box::new(Expr::lit(Lit::new(2)));
+        let minus_two = BinOp::new(Op::Minus, Box::new(Expr::binop(one_p_one.clone())), two);
+
+        let mut interpreter = Interpreter;
+
+        let result = interpreter.visit_ast(&Ast::expr(Expr::binop(one_p_one)));
+        println!("1 + 1:       {}", result);
+        let result = interpreter.visit_ast(&Ast::expr(Expr::binop(minus_two)));
+        println!("(1 + 1) - 2: {}", result);
+    }
+}
