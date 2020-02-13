@@ -1,0 +1,13 @@
+[package]
+name = "asterix"
+version = "0.1.0"
+authors = ["Fisher Darling <fdarling@mines.edu>"]
+edition = "2018"
+
+[dependencies]
+asterix-impl = { path = "../asterix-impl" }
+# # generational-arena = "*"
+# derive_more = "*"
+# getset = "*"
+# paste = { path = "../paste" }
+# casey = "*"

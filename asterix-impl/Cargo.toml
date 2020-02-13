@@ -1,0 +1,15 @@
+[package]
+name = "asterix-impl"
+version = "0.1.0"
+authors = ["Fisher Darling <fdarling@mines.edu>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+proc-macro2 = "*"
+syn = { version="*", features = ["extra-traits", "parsing"] }
+quote = "*"

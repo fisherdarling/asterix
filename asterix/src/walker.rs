@@ -298,7 +298,7 @@ macro_rules! create_walker {
     (
         @struct
         name=[$name:ident]
-        @[$(|$field:tt, $ty:tt|)*]
+        @[$(|$field:tt, $ty:ty|)*]
     ) => {
         paste::item! {
             pub fn [<walk_ $name:lower>](v: &mut impl Visitor, [<$name:lower>]: &$name) {
@@ -327,7 +327,7 @@ macro_rules! create_walker {
             }
 
             $(
-                fn [<walk_ $name:lower _ $variant:lower>](v: &mut impl $crate::ast::Visitor, [<$variant:lower>]: &$ty) {
+                fn [<walk_ $name:lower _ $variant:lower>](v: &mut impl Visitor, [<$variant:lower>]: &$ty) {
                     v.[<visit_ $variant:lower>]([<$variant:lower>]);
                 }
             )*
