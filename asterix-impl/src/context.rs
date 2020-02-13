@@ -1,4 +1,4 @@
-use proc_macro2::{TokenStream, Span};
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{
     braced, parenthesized,
@@ -115,7 +115,7 @@ impl Parse for Variant {
         let mut new_type = None;
         let name: Ident;
         let mut ty: Option<Type> = None;
-        
+
         // Shorthand Syntax |Lit|,
         let lookahead = input.lookahead1();
         if lookahead.peek(Token![|]) {
@@ -220,7 +220,7 @@ pub enum NewType {
 }
 
 impl NewType {
-    fn name(&self) -> &Ident {
+    pub fn name(&self) -> &Ident {
         match self {
             Self::Enum(e) => &e.name,
             Self::Struct(s) => &s.name,
@@ -297,15 +297,12 @@ pub struct WrapperStruct {
 impl Parse for WrapperStruct {
     fn parse(input: ParseStream) -> Result<Self> {
         let name = input.parse::<Ident>()?;
-        
+
         input.parse::<Token![|]>()?;
         let ty = input.parse::<Type>()?;
         input.parse::<Token![|]>()?;
 
-        Ok(WrapperStruct {
-            name,
-            ty,
-        })
+        Ok(WrapperStruct { name, ty })
     }
 }
 

@@ -1,12 +1,10 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
-use syn::{
-    parse::{Parse, ParseStream},
-    parse_macro_input, Result,
-};
+use syn::parse_macro_input;
 
-mod context;
+pub(crate) mod context;
+mod visitor;
 use context::Context;
 
 #[proc_macro]
