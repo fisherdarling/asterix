@@ -2,16 +2,9 @@ use std::collections::HashSet;
 
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote, ToTokens, TokenStreamExt};
-use syn::{
-    braced, parenthesized,
-    parse::{Parse, ParseStream},
-    parse_macro_input, parse_quote,
-    punctuated::Punctuated,
-    token::Paren, spanned::Spanned,
-    Error, Ident, Result, Token, Type,
-};
+use syn::{spanned::Spanned, Ident};
 
-use crate::context::{Context, NewType, EnumType};
+use crate::context::{Context, EnumType, NewType};
 
 pub struct Visitor<'c> {
     pub new_idents: HashSet<String>,
@@ -173,18 +166,25 @@ impl<'c> Visitor<'c> {
                     span = name.span()
                 );
 
-                let (new_type_field_names, new_type_visit): (Vec<_>, Vec<_>) = s.fields.iter().filter_map(|f| {
-                    let mut tokens = TokenStream::new();
-                    f.ty.to_tokens(&mut tokens);
+                let (new_type_field_names, new_type_visit): (Vec<_>, Vec<_>) = s
+                    .fields
+                    .iter()
+                    .filter_map(|f| {
+                        let mut tokens = TokenStream::new();
+                        f.ty.to_tokens(&mut tokens);
 
-                    if self.new_idents.contains(&tokens.to_string()) {
-                        Some((&f.ident, format_ident!("visit_{}", tokens.to_string().to_lowercase())))
-                    } else {
-                        None
-                    }
-                }).unzip();
+                        if self.new_idents.contains(&tokens.to_string()) {
+                            Some((
+                                &f.ident,
+                                format_ident!("visit_{}", tokens.to_string().to_lowercase()),
+                            ))
+                        } else {
+                            None
+                        }
+                    })
+                    .unzip();
 
-                let name_lower_func = name_lower.clone();
+                let _name_lower_func = name_lower.clone();
                 let name_lower_repeat = (0..new_type_field_names.len()).map(|_| &name_lower);
 
                 tokens.append_all(quote! {
@@ -214,7 +214,8 @@ impl<'c> Visitor<'c> {
 
                 let name_lower_inner = name_lower.clone();
                 let inner_call = if self.new_idents.contains(&type_string) {
-                    let visit_new_type = format_ident!("visit_{}", type_string.to_lowercase(), span=s.ty.span());
+                    let visit_new_type =
+                        format_ident!("visit_{}", type_string.to_lowercase(), span = s.ty.span());
                     quote! { self.#visit_new_type(#name_lower_inner.inner()) }
                 } else {
                     quote! { Self::Output::default() }
@@ -235,7 +236,8 @@ impl<'c> Visitor<'c> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+    use syn::parse_quote;
+
     #[test]
     fn simple_enum() {
         let context: Context = parse_quote! {

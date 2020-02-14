@@ -3,10 +3,10 @@ use quote::{quote, ToTokens, TokenStreamExt};
 use syn::{
     braced, parenthesized,
     parse::{Parse, ParseStream},
-    parse_macro_input, parse_quote,
+    parse_quote,
     punctuated::Punctuated,
     token::Paren,
-    Error, Ident, Result, Token, Type,
+    Ident, Result, Token, Type,
 };
 
 #[derive(Default, Debug)]

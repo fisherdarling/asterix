@@ -70,50 +70,51 @@ pub use asterix_impl::ast;
 //     Lit |isize|
 // );
 
-ast!(
-    Lit |isize|,
-    Expr: enum Expr {
-        BinOp: struct BinOp {
-            op: enum Op {
-                Plus,
-                Minus,
-                Times,
-                Divide,
-            },
-            lhs: Box<Expr>,
-            rhs: Box<Expr>,
-        },
-        |Lit|
-    }
-);
-
-use ast::*;
-
-pub struct Interpreter;
-
-impl<'ast> Visitor<'ast> for Interpreter {
-    type Output = isize;
-
-    fn visit_binop(&mut self, b: &BinOp) -> isize {
-        let lhs = self.visit_expr(b.lhs());
-        let rhs = self.visit_expr(b.rhs());
-
-        match b.op() {
-            Op::Plus => lhs + rhs,
-            Op::Minus => lhs - rhs,
-            Op::Times => lhs * rhs,
-            Op::Divide => lhs / rhs,
-        }
-    }
-
-    fn visit_lit(&mut self, lit: &Lit) -> isize {
-        *lit.inner()
-    }
-}
-
+#[allow(dead_code, unused_variables)]
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::ast;
+
+    ast!(
+        Lit |isize|,
+        Expr: enum Expr {
+            BinOp: struct BinOp {
+                op: enum Op {
+                    Plus,
+                    Minus,
+                    Times,
+                    Divide,
+                },
+                lhs: Box<Expr>,
+                rhs: Box<Expr>,
+            },
+            |Lit|
+        }
+    );
+
+    use ast::*;
+
+    pub struct Interpreter;
+
+    impl<'ast> Visitor<'ast> for Interpreter {
+        type Output = isize;
+
+        fn visit_binop(&mut self, b: &BinOp) -> isize {
+            let lhs = self.visit_expr(b.lhs());
+            let rhs = self.visit_expr(b.rhs());
+
+            match b.op() {
+                Op::Plus => lhs + rhs,
+                Op::Minus => lhs - rhs,
+                Op::Times => lhs * rhs,
+                Op::Divide => lhs / rhs,
+            }
+        }
+
+        fn visit_lit(&mut self, lit: &Lit) -> isize {
+            *lit.inner()
+        }
+    }
 
     #[test]
     fn simple_expr() {
